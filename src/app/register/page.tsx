@@ -14,7 +14,7 @@ import {
   Phone,
   ArrowRight
 } from 'lucide-react';
-import { signUpWithRole } from '@/lib/auth';
+import { signUpWithRole, signInWithPassword } from '@/lib/auth';
 
 function RegisterContent() {
   const searchParams = useSearchParams();
@@ -99,13 +99,49 @@ function RegisterContent() {
         return;
       }
 
-      // Se a confirmação de e-mail estiver ativada, pode não vir session.
+      // Para parceiros: login imediato sem confirmação de email (MVP)
+      if (role === 'parceiro') {
+        // Se já veio sessão no signup, redireciona
+        if (data.session) {
+          router.replace('/');
+          return;
+        }
+        
+        // Se não veio sessão, faz login automático após um pequeno delay
+        // (permite que o Supabase processe o cadastro)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: signInData, error: signInError } = await signInWithPassword(trimmedEmail, password);
+        
+        if (signInError) {
+          // Se o login falhar, pode ser que a conta ainda esteja sendo processada
+          // Tenta mais uma vez após um delay maior
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: retryData, error: retryError } = await signInWithPassword(trimmedEmail, password);
+          
+          if (retryError) {
+            setError('Conta criada com sucesso! Por favor, faça login manualmente.');
+            router.push('/login');
+            return;
+          }
+          
+          if (retryData.session) {
+            router.replace('/');
+            return;
+          }
+        } else if (signInData.session) {
+          router.replace('/');
+          return;
+        }
+      }
+
+      // Para pacientes: mantém o fluxo de confirmação de email
       if (!data.session) {
         setSuccess('Cadastro criado! Verifique seu e-mail para confirmar e depois faça login.');
         return;
       }
 
-      router.replace(role === 'parceiro' ? '/' : '/');
+      router.replace('/');
     } catch (e: any) {
       setError(e?.message ?? 'Falha ao cadastrar. Verifique os dados e tente novamente.');
     } finally {

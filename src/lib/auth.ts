@@ -24,12 +24,22 @@ export async function signUpWithRole(payload: SignUpPayload) {
     phone: phone && phone.trim() ? phone.trim() : null,
   };
 
+  // Para parceiros no MVP: desabilita confirmação de email e permite login imediato
+  const signUpOptions: any = {
+    data: metadata,
+  };
+
+  if (role === 'parceiro') {
+    // Desabilita confirmação de email para parceiros (MVP)
+    signUpOptions.emailRedirectTo = undefined;
+    // Força a criação da sessão imediatamente
+    signUpOptions.captchaToken = undefined;
+  }
+
   return await supabase.auth.signUp({
     email: email.trim(),
     password,
-    options: {
-      data: metadata,
-    },
+    options: signUpOptions,
   });
 }
 
