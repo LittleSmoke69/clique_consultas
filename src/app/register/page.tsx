@@ -63,7 +63,7 @@ function RegisterContent() {
         return;
       }
 
-      const role = userType === 'paciente' ? 'paciente' : 'parceiro';
+      const role: 'paciente' | 'parceiro' = userType === 'paciente' ? 'paciente' : 'parceiro';
       
       // Prepara os dados, convertendo strings vazias para undefined
       const payload = {
