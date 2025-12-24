@@ -16,15 +16,19 @@ export async function signInWithPassword(email: string, password: string) {
 
 export async function signUpWithRole(payload: SignUpPayload) {
   const { email, password, fullName, phone, role } = payload;
+  
+  // Garante que strings vazias sejam convertidas para null
+  const metadata: Record<string, string | null> = {
+    role,
+    full_name: fullName && fullName.trim() ? fullName.trim() : null,
+    phone: phone && phone.trim() ? phone.trim() : null,
+  };
+
   return await supabase.auth.signUp({
-    email,
+    email: email.trim(),
     password,
     options: {
-      data: {
-        role,
-        full_name: fullName ?? null,
-        phone: phone ?? null,
-      },
+      data: metadata,
     },
   });
 }

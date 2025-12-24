@@ -39,16 +39,65 @@ function RegisterContent() {
       setSuccess(null);
       setLoading(true);
 
+      // Validações básicas
+      const trimmedEmail = email.trim();
+      if (!trimmedEmail) {
+        setError('Por favor, informe seu e-mail.');
+        return;
+      }
+
+      // Validação de formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        setError('Por favor, informe um e-mail válido.');
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        setError('A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
+      if (!fullName.trim()) {
+        setError('Por favor, informe seu nome completo.');
+        return;
+      }
+
       const role = userType === 'paciente' ? 'paciente' : 'parceiro';
-      const { data, error: signUpError } = await signUpWithRole({
+      
+      // Prepara os dados, convertendo strings vazias para undefined
+      const payload = {
         email: email.trim(),
         password,
-        fullName: fullName.trim(),
-        phone: phone.trim(),
+        fullName: fullName.trim() || undefined,
+        phone: phone.trim() || undefined,
         role,
-      });
+      };
 
-      if (signUpError) throw signUpError;
+      const { data, error: signUpError } = await signUpWithRole(payload);
+
+      if (signUpError) {
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Falha ao cadastrar. Verifique os dados e tente novamente.';
+        
+        const errorMsg = signUpError.message?.toLowerCase() || '';
+        const errorStatus = signUpError.status || 0;
+        
+        if (errorMsg.includes('already registered') || errorMsg.includes('already exists') || errorMsg.includes('user already')) {
+          errorMessage = 'Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.';
+        } else if (errorMsg.includes('password') || errorMsg.includes('weak password')) {
+          errorMessage = 'A senha não atende aos requisitos mínimos. Use pelo menos 6 caracteres.';
+        } else if (errorMsg.includes('email') || errorMsg.includes('invalid email')) {
+          errorMessage = 'E-mail inválido. Verifique o formato e tente novamente.';
+        } else if (errorStatus === 400) {
+          errorMessage = `Erro na validação: ${errorMsg || 'Verifique todos os campos e tente novamente.'}`;
+        } else if (signUpError.message) {
+          errorMessage = signUpError.message;
+        }
+        
+        setError(errorMessage);
+        return;
+      }
 
       // Se a confirmação de e-mail estiver ativada, pode não vir session.
       if (!data.session) {
