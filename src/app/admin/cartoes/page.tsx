@@ -97,13 +97,12 @@ const clinics: Clinic[] = [
 
 export default function CartoesPage() {
   return (
-    <AdminLayout>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-6"
-      >
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
         {/* Header Section */}
         <motion.div 
           variants={itemVariants} 
@@ -411,7 +410,6 @@ export default function CartoesPage() {
           ))}
         </motion.div>
       </motion.div>
-    </AdminLayout>
   );
 }
 

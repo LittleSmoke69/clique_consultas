@@ -41,36 +41,10 @@ end;
 $$;
 
 -- ==========================================================
--- Migração de nomes (sem prefixo -> clique_)
+-- Migração de nomes (clique_)
 -- ==========================================================
 do $$
 begin
-  if to_regclass('public.profiles') is not null and to_regclass('public.clique_profiles') is null then
-    alter table public.profiles rename to clique_profiles;
-    -- Garantir que a primary key existe após renomear
-    if exists (
-      select 1 from information_schema.columns 
-      where table_schema = 'public' 
-        and table_name = 'clique_profiles' 
-        and column_name = 'id'
-    ) then
-      -- Garante que a coluna id não permite NULL
-      alter table public.clique_profiles alter column id set not null;
-      
-      -- Remove qualquer constraint antiga que possa estar no id
-      alter table public.clique_profiles drop constraint if exists profiles_pkey;
-      
-      -- Cria a primary key se não existir
-      if not exists (
-        select 1 from information_schema.table_constraints 
-        where constraint_schema = 'public' 
-          and table_name = 'clique_profiles' 
-          and constraint_type = 'PRIMARY KEY'
-      ) then
-        alter table public.clique_profiles add constraint clique_profiles_pkey primary key (id);
-      end if;
-    end if;
-  end if;
   if to_regclass('public.specialties') is not null and to_regclass('public.clique_specialties') is null then
     alter table public.specialties rename to clique_specialties;
   end if;
@@ -98,50 +72,16 @@ end $$;
 -- Perfis / Autorização
 -- ==========================================================
 create table if not exists public.clique_profiles (
-  id uuid references auth.users on delete cascade,
+  id uuid primary key references auth.users on delete cascade,
   role public.user_role not null default 'paciente',
   full_name text,
   avatar_url text,
   phone text,
+  email text,
+  password text,
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
-
--- Garantir que a primary key existe (caso a tabela já exista sem ela)
-do $$
-begin
-  -- Verifica se a tabela existe
-  if exists (
-    select 1 from information_schema.tables 
-    where table_schema = 'public' and table_name = 'clique_profiles'
-  ) then
-    -- Verifica se a coluna id existe
-    if exists (
-      select 1 from information_schema.columns 
-      where table_schema = 'public' 
-        and table_name = 'clique_profiles' 
-        and column_name = 'id'
-    ) then
-      -- Garante que a coluna id não permite NULL
-      alter table public.clique_profiles alter column id set not null;
-      
-      -- Cria a primary key se não existir
-      if not exists (
-        select 1 from information_schema.table_constraints 
-        where constraint_schema = 'public' 
-          and table_name = 'clique_profiles' 
-          and constraint_type = 'PRIMARY KEY'
-      ) then
-        -- Remove qualquer constraint antiga que possa estar no id
-        alter table public.clique_profiles drop constraint if exists clique_profiles_pkey;
-        alter table public.clique_profiles drop constraint if exists profiles_pkey;
-        
-        -- Cria a primary key
-        alter table public.clique_profiles add constraint clique_profiles_pkey primary key (id);
-      end if;
-    end if;
-  end if;
-end $$;
 
 -- Migração de colunas (caso tabela já exista sem role)
 do $$
@@ -215,19 +155,21 @@ begin
     role_value := 'paciente';
   end if;
 
-  insert into public.clique_profiles (id, role, full_name, phone, avatar_url)
+  insert into public.clique_profiles (id, role, full_name, phone, avatar_url, email)
   values (
     new.id,
     role_value,
     nullif(new.raw_user_meta_data->>'full_name', ''),
     nullif(new.raw_user_meta_data->>'phone', ''),
-    nullif(new.raw_user_meta_data->>'avatar_url', '')
+    nullif(new.raw_user_meta_data->>'avatar_url', ''),
+    new.email
   )
   on conflict (id) do update
     set role = excluded.role,
         full_name = excluded.full_name,
         phone = excluded.phone,
-        avatar_url = excluded.avatar_url;
+        avatar_url = excluded.avatar_url,
+        email = excluded.email;
 
   return new;
 end;

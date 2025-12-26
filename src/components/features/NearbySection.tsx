@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 const NEARBY_PROFESSIONALS: Professional[] = [
   {
-    id: 'nearby-1',
+    id: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
     full_name: 'Dr. João Silva',
     slug: 'joao-silva',
     bio: 'Psicologia Clínica',
@@ -21,7 +21,7 @@ const NEARBY_PROFESSIONALS: Professional[] = [
     crm_rqe: 'CRP 12345'
   },
   {
-    id: 'nearby-2',
+    id: 'b8e9d123-e456-4789-a123-456789abcdef',
     full_name: 'Clínica Vida Nova',
     slug: 'clinica-vida-nova',
     bio: 'Clínica Médica Geral',

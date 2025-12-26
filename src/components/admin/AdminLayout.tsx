@@ -23,7 +23,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Sidebar - Controlled by state for both mobile and desktop */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white z-30 transform transition-transform duration-300 shadow-xl lg:shadow-lg border-r border-slate-100 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 shadow-xl lg:shadow-none border-r border-slate-100 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

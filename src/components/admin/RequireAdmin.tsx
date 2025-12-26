@@ -4,21 +4,30 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMyProfile, getSession, signOut } from '@/lib/auth';
 
+// Estado global para evitar flickering entre trocas de layout
+let isVerifiedGlobal = false;
+let verifiedRoleGlobal: string | null = null;
+
 interface RequireAdminProps {
   children: React.ReactNode;
 }
 
 export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
   const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [allowed, setAllowed] = useState(isVerifiedGlobal);
+  const [loading, setLoading] = useState(!isVerifiedGlobal);
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       try {
-        setLoading(true);
+        // Se já verificamos globalmente, apenas marcamos como permitido
+        if (isVerifiedGlobal && (verifiedRoleGlobal === 'admin' || verifiedRoleGlobal === 'parceiro')) {
+          setAllowed(true);
+          setLoading(false);
+          return;
+        }
 
         const { data, error } = await getSession();
         if (error) throw error;
@@ -31,13 +40,21 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
         const { profile, error: profileError } = await getMyProfile();
         if (profileError) throw profileError;
 
-        if (!profile || profile.role !== 'admin') {
+        if (!profile || (profile.role !== 'admin' && profile.role !== 'parceiro')) {
+          console.warn('DEBUG: Acesso negado. Role:', profile?.role);
           await signOut();
           router.replace('/login');
           return;
         }
 
-        if (!cancelled) setAllowed(true);
+        // Sucesso: Atualiza estados locais e globais
+        isVerifiedGlobal = true;
+        verifiedRoleGlobal = profile.role;
+        
+        if (!cancelled) {
+          setAllowed(true);
+          setLoading(false);
+        }
       } catch {
         router.replace('/login');
       } finally {
@@ -51,6 +68,9 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
     };
   }, [router]);
 
+  // Se já está permitido, renderiza imediatamente sem mostrar o splash de loading
+  if (allowed) return <>{children}</>;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -62,8 +82,7 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
     );
   }
 
-  if (!allowed) return null;
-  return <>{children}</>;
+  return null;
 };
 
 

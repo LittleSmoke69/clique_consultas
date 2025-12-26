@@ -12,10 +12,16 @@ INSERT INTO clique_clinics (type, name, slug, description, address, city, state,
 ('clinica', 'Clínica Vida Nova', 'clinica-vida-nova', 'Clínica médica geral com atendimento humanizado.', 'Av. Paulista, 1000', 'São Paulo', 'SP', '01310-100', 4.9, 287, true),
 ('hospital', 'Hospital Santa Cruz', 'hospital-santa-cruz', 'Hospital referência em atendimento e cirurgias.', 'Rua das Flores, 200', 'São Paulo', 'SP', '04000-000', 4.7, 412, true);
 
--- Inserir Profissionais
+-- Inserir Profissionais com IDs fixos para sincronia com frontend
+INSERT INTO clique_professionals (id, full_name, slug, bio, crm_rqe, base_price, rating, reviews_count, is_online_available, clique_plus_available) VALUES
+('d290f1ee-6c54-4b01-90e6-d701748f0851', 'Dr. Ricardo Almeida', 'ricardo-almeida', 'Especialista em dermatologia clínica e cirúrgica.', 'CRM 123456 / RQE 789', 180.00, 4.9, 124, true, true),
+('b8e9d123-e456-4789-a123-456789abcdef', 'Dra. Beatriz Santos', 'beatriz-santos', 'Especialista em pediatria com foco em neonatologia.', 'CRM 654321 / RQE 321', 150.00, 4.8, 89, false, true)
+ON CONFLICT (id) DO UPDATE SET 
+  full_name = EXCLUDED.full_name,
+  slug = EXCLUDED.slug,
+  bio = EXCLUDED.bio;
+
 INSERT INTO clique_professionals (full_name, slug, bio, crm_rqe, base_price, rating, reviews_count, is_online_available, clique_plus_available) VALUES
-('Dr. Ricardo Almeida', 'ricardo-almeida', 'Especialista em dermatologia clínica e cirúrgica.', 'CRM 123456 / RQE 789', 180.00, 4.9, 124, true, true),
-('Dra. Beatriz Santos', 'beatriz-santos', 'Especialista em pediatria com foco em neonatologia.', 'CRM 654321 / RQE 321', 150.00, 4.8, 89, false, true),
 ('Dr. Marcos Oliveira', 'marcos-oliveira', 'Cardiologista com mais de 15 anos de experiência.', 'CRM 112233 / RQE 445', 220.00, 4.7, 56, true, false),
 ('Dra. Julia Costa', 'julia-costa', 'Ginecologista obstetra focada em saúde da mulher.', 'CRM 998877 / RQE 112', 200.00, 5.0, 42, true, true);
 

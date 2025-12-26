@@ -27,24 +27,45 @@ export default function LoginPage() {
       setError(null);
       setLoadingRole(expectedRole);
 
-      const { error: signInError } = await signInWithPassword(email.trim(), password);
-      if (signInError) throw signInError;
+      console.log('DEBUG: Iniciando login para:', { email, expectedRole });
+
+      const { data: signInData, error: signInError } = await signInWithPassword(email.trim(), password);
+      
+      if (signInError) {
+        console.error('DEBUG: Erro no signIn:', signInError);
+        throw signInError;
+      }
+
+      console.log('DEBUG: Login Auth OK, buscando perfil...');
 
       const { profile, error: profileError } = await getMyProfile();
-      if (profileError) throw profileError;
+      
+      if (profileError) {
+        console.error('DEBUG: Erro ao buscar perfil:', profileError);
+        throw profileError;
+      }
+
+      console.log('DEBUG: Perfil encontrado:', profile);
 
       if (!profile?.role) {
+        console.warn('DEBUG: Perfil sem role ou não encontrado na tabela clique_profiles');
         await signOut();
-        throw new Error('Perfil de usuário não encontrado. Tente novamente.');
+        throw new Error('Perfil de usuário não encontrado na base de dados. Verifique se o cadastro foi concluído.');
       }
 
       if (profile.role !== expectedRole) {
+        console.warn('DEBUG: Role incompatível:', { atual: profile.role, esperada: expectedRole });
         await signOut();
-        throw new Error('Seu perfil não tem permissão para entrar nesse modo.');
+        throw new Error(`Seu perfil é de ${profile.role}, mas você tentou entrar como ${expectedRole}.`);
       }
 
-      router.replace(expectedRole === 'admin' ? '/admin' : '/');
+      // Redirecionamento dinâmico baseado na role
+      const targetPath = profile.role === 'admin' ? '/admin' : profile.role === 'parceiro' ? '/dashboard' : '/';
+      console.log('DEBUG: Login sucesso! Redirecionando para:', targetPath);
+      
+      router.replace(targetPath);
     } catch (e: any) {
+      console.error('DEBUG: Exceção no handleLogin:', e);
       setError(e?.message ?? 'Falha ao entrar. Verifique suas credenciais.');
     } finally {
       setLoadingRole(null);

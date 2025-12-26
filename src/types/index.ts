@@ -62,3 +62,36 @@ export type AvailabilitySlot = {
   price: number | null;
 };
 
+export type Appointment = {
+  id: string;
+  user_id: string | null;
+  patient_name: string;
+  patient_email: string;
+  patient_phone: string | null;
+  patient_cpf: string | null;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  payment_method: 'pix' | 'credit_card' | 'debit_card' | 'clique_plus' | null;
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  total_amount: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  items?: AppointmentItem[];
+};
+
+export type AppointmentItem = {
+  id: string;
+  appointment_id: string;
+  professional_id: string;
+  clinic_id: string | null;
+  appointment_date: string;
+  appointment_time: string;
+  appointment_type: 'presencial' | 'online';
+  price: number;
+  specialty_id: string | null;
+  professional?: Professional | null;
+  clinic?: Clinic | null;
+  specialty?: Specialty | null;
+};
+
+export type PaymentMethod = 'pix' | 'credit_card' | 'clique_plus';

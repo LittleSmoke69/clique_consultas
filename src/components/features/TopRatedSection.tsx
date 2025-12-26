@@ -8,56 +8,30 @@ import { motion } from 'framer-motion';
 
 const TOP_PROFESSIONALS: Professional[] = [
   {
-    id: '1',
-    full_name: 'Dr. João Silva',
-    slug: 'joao-silva',
-    bio: 'Psicologia Clínica',
+    id: 'd290f1ee-6c54-4b01-90e6-d701748f0851', // ID do Dr. Ricardo Almeida
+    full_name: 'Dr. Ricardo Almeida',
+    slug: 'ricardo-almeida',
+    bio: 'Dermatologia Clínica e Cirúrgica',
     avatar_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400',
-    rating: 4.8,
-    reviews_count: 152,
-    base_price: 120,
-    is_online_available: false,
-    clique_plus_available: true,
-    crm_rqe: 'CRP 12345'
-  },
-  {
-    id: '2',
-    full_name: 'Clínica Vida Nova',
-    slug: 'clinica-vida-nova',
-    bio: 'Clínica Médica Geral',
-    avatar_url: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400',
     rating: 4.9,
-    reviews_count: 287,
-    base_price: 150,
-    is_online_available: false,
-    clique_plus_available: true,
-    crm_rqe: 'CNPJ 00.000.000/0001-00'
-  },
-  {
-    id: '3',
-    full_name: 'Dr. Carlos Oliveira',
-    slug: 'carlos-oliveira',
-    bio: 'Psiquiatria',
-    avatar_url: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=400',
-    rating: 4.9,
-    reviews_count: 203,
+    reviews_count: 124,
     base_price: 180,
     is_online_available: true,
     clique_plus_available: true,
-    crm_rqe: 'CRM 112233'
+    crm_rqe: 'CRM 123456 / RQE 789'
   },
   {
-    id: '4',
-    full_name: 'Dra. Ana Costa',
-    slug: 'ana-costa',
-    bio: 'Terapia Cognitiva',
+    id: 'b8e9d123-e456-4789-a123-456789abcdef', // ID da Dra. Beatriz Santos
+    full_name: 'Dra. Beatriz Santos',
+    slug: 'beatriz-santos',
+    bio: 'Pediatria e Neonatologia',
     avatar_url: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=400',
     rating: 4.8,
-    reviews_count: 176,
-    base_price: 140,
-    is_online_available: true,
+    reviews_count: 89,
+    base_price: 150,
+    is_online_available: false,
     clique_plus_available: true,
-    crm_rqe: 'CRP 54321'
+    crm_rqe: 'CRM 654321 / RQE 321'
   }
 ];
 

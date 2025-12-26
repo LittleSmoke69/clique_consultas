@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, MapPin, Heart, ChevronLeft, ChevronRight, Calendar, ShieldCheck, Video, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Professional } from '@/types';
+import { AppointmentModal } from '@/components/features/AppointmentModal';
 
 interface ProfessionalCardProps {
   professional: Professional;
@@ -11,6 +12,8 @@ interface ProfessionalCardProps {
 }
 
 export const ProfessionalCard = ({ professional, showCallButton = false }: ProfessionalCardProps) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const specialty = professional.specialties?.[0] || null;
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -115,13 +118,23 @@ export const ProfessionalCard = ({ professional, showCallButton = false }: Profe
                 Ligar
               </button>
             )}
-            <button className="bg-[#2B59FF] text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#1a44cc] transition-all shadow-lg shadow-[#2B59FF]/20 text-sm whitespace-nowrap">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-[#2B59FF] text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#1a44cc] transition-all shadow-lg shadow-[#2B59FF]/20 text-sm whitespace-nowrap"
+            >
               <Calendar className="w-4 h-4" />
               Agendar
             </button>
           </div>
         </div>
       </div>
+
+      <AppointmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        professional={professional}
+        specialty={specialty}
+      />
     </motion.div>
   );
 };

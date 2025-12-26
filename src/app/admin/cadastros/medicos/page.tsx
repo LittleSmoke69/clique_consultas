@@ -1,301 +1,226 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { supabase } from '@/lib/supabase';
-import { slugify } from '@/lib/slug';
-import type { Clinic, Professional } from '@/types';
-import { Plus, RefreshCw, Stethoscope, Trash2 } from 'lucide-react';
+import { MetricCard } from '@/components/admin/MetricCard';
+import { 
+  Stethoscope, 
+  UserCheck, 
+  Clock, 
+  Award, 
+  Plus, 
+  Search, 
+  Calendar, 
+  Trash2,
+  ChevronDown,
+  Mail,
+  Phone
+} from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
+const professionalsMock = [
+  { 
+    id: 1, 
+    name: 'Dr. João Silva', 
+    email: 'joao.silva@clinica.com', 
+    specialty: 'Cardiologia', 
+    crm: 'CRM/SP 123456', 
+    phone: '(11) 98765-4321', 
+    status: 'Ativo',
+    avatar: 'JS'
+  },
+  { 
+    id: 2, 
+    name: 'Dra. Ana Costa', 
+    email: 'ana.costa@clinica.com', 
+    specialty: 'Dermatologia', 
+    crm: 'CRM/SP 234567', 
+    phone: '(11) 97654-3210', 
+    status: 'Ativo',
+    avatar: 'AC'
+  },
+  { 
+    id: 3, 
+    name: 'Dr. Paulo Mendes', 
+    email: 'paulo.mendes@clinica.com', 
+    specialty: 'Ortopedia', 
+    crm: 'CRM/SP 345678', 
+    phone: '(11) 96543-2109', 
+    status: 'Em credenciamento',
+    avatar: 'PM'
+  },
+  { 
+    id: 4, 
+    name: 'Dra. Fernanda Silva', 
+    email: 'fernanda.silva@clinica.com', 
+    specialty: 'Pediatria', 
+    crm: 'CRM/SP 456789', 
+    phone: '(11) 95432-1098', 
+    status: 'Ativo',
+    avatar: 'FS'
+  },
+];
 
-type ClinicOption = Pick<Clinic, 'id' | 'name'>;
-
-export default function AdminMedicosPage() {
-  const [clinics, setClinics] = useState<ClinicOption[]>([]);
-  const [items, setItems] = useState<Professional[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    full_name: '',
-    crm_rqe: '',
-    bio: '',
-    base_price: '150',
-    is_online_available: true,
-    clique_plus_available: false,
-    clinic_id: '' as string,
-  });
-
-  const slug = useMemo(() => slugify(form.full_name), [form.full_name]);
-
-  async function load() {
-    try {
-      setError(null);
-      setLoading(true);
-
-        const [clinicsRes, profRes] = await Promise.all([
-          supabase.from('clique_clinics').select('id, name').order('name', { ascending: true }),
-          supabase
-            .from('clique_professionals')
-            .select('id, full_name, slug, bio, crm_rqe, avatar_url, rating, reviews_count, base_price, is_online_available, clique_plus_available')
-            .order('created_at', { ascending: false }),
-        ]);
-
-      if (clinicsRes.error) throw clinicsRes.error;
-      if (profRes.error) throw profRes.error;
-
-      setClinics((clinicsRes.data ?? []) as ClinicOption[]);
-      setItems((profRes.data ?? []) as Professional[]);
-    } catch (e: any) {
-      setError(e?.message ?? 'Falha ao carregar médicos.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  async function handleCreate() {
-    try {
-      setError(null);
-      setSaving(true);
-
-      if (!form.full_name.trim()) throw new Error('Informe o nome do médico.');
-      if (!slug) throw new Error('Nome inválido para gerar slug.');
-      const basePrice = Number(form.base_price);
-      if (!Number.isFinite(basePrice) || basePrice < 0) throw new Error('Preço base inválido.');
-
-        const { data: created, error: createError } = await supabase
-          .from('clique_professionals')
-          .insert({
-          full_name: form.full_name.trim(),
-          slug,
-          bio: form.bio.trim() || null,
-          crm_rqe: form.crm_rqe.trim() || null,
-          base_price: basePrice,
-          is_online_available: form.is_online_available,
-          clique_plus_available: form.clique_plus_available,
-          kind: 'medico',
-        })
-        .select('id')
-        .single();
-      if (createError) throw createError;
-
-      if (form.clinic_id) {
-          const { error: linkError } = await supabase.from('clique_clinic_professionals').insert({
-          clinic_id: form.clinic_id,
-          professional_id: created.id,
-        });
-        if (linkError) throw linkError;
-      }
-
-      setForm((p) => ({ ...p, full_name: '', crm_rqe: '', bio: '', base_price: '150', clinic_id: '' }));
-      await load();
-    } catch (e: any) {
-      setError(e?.message ?? 'Falha ao cadastrar médico.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    const ok = confirm('Tem certeza que deseja excluir este médico?');
-    if (!ok) return;
-
-    try {
-      setError(null);
-        const { error } = await supabase.from('clique_professionals').delete().eq('id', id);
-      if (error) throw error;
-      setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch (e: any) {
-      setError(e?.message ?? 'Falha ao excluir médico.');
-    }
-  }
+export default function GestaoProfissionaisPage() {
+  const [searchTerm, setSearchTerm] = useState('');
 
   return (
-    <AdminLayout>
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 rounded-xl">
-                <Stethoscope className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">Cadastros: Médicos</h1>
-                <p className="text-slate-600 text-sm">Crie médicos que aparecerão na busca e listagens.</p>
-              </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8"
+    >
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Total Profissionais"
+            value="4"
+            icon={Stethoscope}
+            iconColor="#2B59FF"
+          />
+          <MetricCard
+            title="Ativos"
+            value="3"
+            icon={UserCheck}
+            iconColor="#10B981"
+          />
+          <MetricCard
+            title="Em Credenciamento"
+            value="1"
+            icon={Clock}
+            iconColor="#F59E0B"
+          />
+          <MetricCard
+            title="Especialidades"
+            value="6"
+            icon={Award}
+            iconColor="#8B5CF6"
+          />
+        </div>
+
+        {/* Section Header & Filters */}
+        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Gestão de Profissionais</h2>
             </div>
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold hover:bg-slate-50"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Atualizar
+            <button className="flex items-center gap-2 bg-[#2B59FF] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#1a44cc] transition-all shadow-lg shadow-[#2B59FF]/20">
+              <Plus className="w-5 h-5" />
+              Novo Profissional
             </button>
           </div>
-        </motion.div>
 
-        {error && (
-          <motion.div variants={itemVariants} className="bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl px-4 py-3 text-sm font-bold">
-            {error}
-          </motion.div>
-        )}
-
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Novo médico</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nome</label>
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
-                value={form.full_name}
-                onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                placeholder="Ex: Dr. Ricardo Almeida"
-              />
-              {slug && <p className="text-xs text-slate-400 mt-1 font-mono">slug: {slug}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">CRM/RQE</label>
-              <input
-                value={form.crm_rqe}
-                onChange={(e) => setForm((p) => ({ ...p, crm_rqe: e.target.value }))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                placeholder="Ex: CRM 123456 / RQE 789"
+                type="text"
+                placeholder="Buscar por nome ou CRM..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2B59FF]/20 focus:border-[#2B59FF] transition-all"
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço base</label>
-              <input
-                value={form.base_price}
-                onChange={(e) => setForm((p) => ({ ...p, base_price: e.target.value }))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                placeholder="150"
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Vincular à unidade (opcional)</label>
-              <select
-                value={form.clinic_id}
-                onChange={(e) => setForm((p) => ({ ...p, clinic_id: e.target.value }))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              >
-                <option value="">—</option>
-                {clinics.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="lg:col-span-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Bio</label>
-              <input
-                value={form.bio}
-                onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value }))}
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                placeholder="Ex: Especialista em cardiologia…"
-              />
-            </div>
-            <div className="lg:col-span-6 flex flex-wrap gap-6 pt-2">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={form.is_online_available}
-                  onChange={(e) => setForm((p) => ({ ...p, is_online_available: e.target.checked }))}
-                  className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-sm font-bold text-slate-700">Disponível online</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={form.clique_plus_available}
-                  onChange={(e) => setForm((p) => ({ ...p, clique_plus_available: e.target.checked }))}
-                  className="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-sm font-bold text-slate-700">Clique+</span>
-              </label>
+            <div className="flex gap-4">
+              <div className="relative">
+                <select className="appearance-none bg-slate-50 border border-slate-100 rounded-2xl pl-4 pr-10 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2B59FF]/20 focus:border-[#2B59FF] transition-all cursor-pointer">
+                  <option>Todas especialidades</option>
+                  <option>Cardiologia</option>
+                  <option>Dermatologia</option>
+                  <option>Ortopedia</option>
+                  <option>Pediatria</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+              </div>
+              <div className="relative">
+                <select className="appearance-none bg-slate-50 border border-slate-100 rounded-2xl pl-4 pr-10 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2B59FF]/20 focus:border-[#2B59FF] transition-all cursor-pointer">
+                  <option>Todos status</option>
+                  <option>Ativo</option>
+                  <option>Em credenciamento</option>
+                  <option>Inativo</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end mt-5">
-            <button
-              type="button"
-              disabled={saving || !form.full_name.trim()}
-              onClick={() => void handleCreate()}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-4 h-4" />
-              {saving ? 'Salvando…' : 'Cadastrar'}
-            </button>
-          </div>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Médicos cadastrados</h2>
-          {loading ? (
-            <div className="h-24 bg-slate-50 rounded-xl animate-pulse" />
-          ) : items.length === 0 ? (
-            <p className="text-slate-500 font-medium">Nenhum médico cadastrado ainda.</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nome</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">CRM/RQE</th>
-                    <th className="text-left py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Preço base</th>
-                    <th className="text-right py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((p) => (
-                    <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4">
-                        <p className="font-bold text-slate-900">{p.full_name}</p>
-                        <p className="text-xs text-slate-400 font-mono">{p.slug}</p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-slate-700 font-bold">{p.crm_rqe ?? '—'}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-slate-700 font-bold">R$ {p.base_price}</span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(p.id)}
-                          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-bold hover:bg-rose-100"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Excluir
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left py-4 px-4 text-sm font-bold text-slate-900">Profissional</th>
+                  <th className="text-left py-4 px-4 text-sm font-bold text-slate-900">Especialidade</th>
+                  <th className="text-left py-4 px-4 text-sm font-bold text-slate-900">CRM</th>
+                  <th className="text-left py-4 px-4 text-sm font-bold text-slate-900">Contato</th>
+                  <th className="text-left py-4 px-4 text-sm font-bold text-slate-900">Status</th>
+                  <th className="text-right py-4 px-4 text-sm font-bold text-slate-900">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {professionalsMock.map((prof) => (
+                  <tr key={prof.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-[#2B59FF] font-bold text-xs shadow-sm">
+                          {prof.avatar}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{prof.name}</p>
+                          <p className="text-xs text-slate-400 font-medium">{prof.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-4">
+                      <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-600">
+                        {prof.specialty}
+                      </span>
+                    </td>
+                    <td className="py-5 px-4 text-sm text-slate-900 font-bold">
+                      {prof.crm}
+                    </td>
+                    <td className="py-5 px-4">
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">{prof.phone}</span>
+                      </div>
+                    </td>
+                    <td className="py-5 px-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        prof.status === 'Ativo' 
+                          ? 'bg-emerald-50 text-emerald-600' 
+                          : 'bg-amber-50 text-amber-600'
+                      }`}>
+                        {prof.status}
+                      </span>
+                    </td>
+                    <td className="py-5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#2B59FF] transition-all">
+                          <Calendar className="w-4 h-4" />
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
+                        <button className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-500 transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </motion.div>
-    </AdminLayout>
   );
 }
-
-

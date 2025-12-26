@@ -11,7 +11,11 @@ export type SignUpPayload = {
 };
 
 export async function signInWithPassword(email: string, password: string) {
-  return await supabase.auth.signInWithPassword({ email, password });
+  const response = await supabase.auth.signInWithPassword({ email, password });
+  if (response.error) {
+    console.error('DEBUG: Erro no signInWithPassword:', response.error);
+  }
+  return response;
 }
 
 export async function signUpWithRole(payload: SignUpPayload) {
@@ -23,6 +27,8 @@ export async function signUpWithRole(payload: SignUpPayload) {
     full_name: fullName && fullName.trim() ? fullName.trim() : null,
     phone: phone && phone.trim() ? phone.trim() : null,
   };
+
+  console.log('DEBUG: Enviando metadata para o Supabase:', metadata);
 
   // Para parceiros no MVP: desabilita confirmação de email e permite login imediato
   const signUpOptions: any = {
@@ -62,7 +68,7 @@ export async function getMyProfile() {
 
   const { data, error } = await supabase
     .from('clique_profiles')
-    .select('id, role, full_name, avatar_url, phone, created_at, updated_at')
+    .select('id, role, full_name, avatar_url, phone, email, created_at, updated_at')
     .eq('id', session.user.id)
     .single();
 

@@ -75,6 +75,12 @@ function RegisterContent() {
       };
 
       const { data, error: signUpError } = await signUpWithRole(payload);
+      
+      console.log('DEBUG: Registro - Resultado do SignUp:', { 
+        user: data.user?.id, 
+        hasSession: !!data.session, 
+        error: signUpError 
+      });
 
       if (signUpError) {
         // Mensagens de erro mais específicas
@@ -96,6 +102,13 @@ function RegisterContent() {
         }
         
         setError(errorMessage);
+        return;
+      }
+
+      // Se não retornou erro mas não tem usuário, provavelmente o e-mail já existe 
+      // (Supabase retorna 200 ocultando o erro por segurança)
+      if (!data.user) {
+        setError('Este e-mail já está cadastrado ou aguarda confirmação. Tente fazer login.');
         return;
       }
 

@@ -9,3 +9,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Cliente com privilégios de admin (Service Role) para operações no servidor
+// NUNCA use isso no lado do cliente
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : supabase;
+

@@ -101,8 +101,7 @@ export default function AdminUnidadesPage() {
   }
 
   return (
-    <AdminLayout>
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
         <motion.div variants={itemVariants} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -275,7 +274,6 @@ export default function AdminUnidadesPage() {
           )}
         </motion.div>
       </motion.div>
-    </AdminLayout>
   );
 }
 
